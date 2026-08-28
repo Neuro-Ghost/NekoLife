@@ -38,26 +38,27 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@id([identifier, token])
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  image          String?
-  bio            String?
-  theme          String    @default("sakura")
-  createdAt      DateTime  @default(now())
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  bio           String?
+  theme         String    @default("sakura")
+  createdAt     DateTime  @default(now())
 
-  accounts       Account[]
-  sessions       Session[]
-  tasks          Task[]
-  events         Event[]
-  notes          Note[]
-  habits         Habit[]
-  habitLogs      HabitLog[]
+  accounts  Account[]
+  sessions  Session[]
+  tasks     Task[]
+  events    Event[]
+  notes     Note[]
+  habits    Habit[]
+  habitLogs HabitLog[]
 }
 
 // -------- Domain --------
@@ -69,33 +70,33 @@ model Task {
   done        Boolean  @default(false)
   priority    String   @default("normal") // low | normal | high | urgent
   area        String   @default("PERSONAL")
-  status      String   @default("todo")   // todo | doing | done | later
+  status      String   @default("todo")    // todo | doing | done | later
   dueDate     DateTime?
   tags        String   @default("")       // comma-separated
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([userId, dueDate])
 }
 
 model Event {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   description String?
   startsAt    DateTime
   endsAt      DateTime?
-  allDay      Boolean  @default(false)
-  area        String   @default("PERSONAL")
-  color       String   @default("#FFA3B8")
-  createdAt   DateTime @default(now())
+  allDay      Boolean   @default(false)
+  area        String    @default("PERSONAL")
+  color       String    @default("#FFA3B8")
+  createdAt   DateTime  @default(now())
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startsAt])
 }
@@ -109,8 +110,8 @@ model Note {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -122,18 +123,18 @@ model Habit {
   area      String   @default("HEALTH")
   createdAt DateTime @default(now())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  logs      HabitLog[]
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs   HabitLog[]
 }
 
 model HabitLog {
-  id       String   @id @default(cuid())
-  date     String   // YYYY-MM-DD
-  habitId  String
-  habit    Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  date    String // YYYY-MM-DD
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([habitId, date])
 }
