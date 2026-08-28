@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  background: #FFF8F1;
+  color: #4A3828;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Soft scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #FFC2D1; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #FFA3B8; }
+
+/* Card base */
+.card {
+  @apply bg-white rounded-2xl shadow-soft border border-sakura-100/60;
+}
+
+.btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+}
+.btn-primary {
+  @apply btn bg-gradient-to-r from-sakura-300 to-sakura-400 text-white shadow-soft hover:shadow-glow;
+}
+.btn-ghost {
+  @apply btn bg-transparent text-mocha-600 hover:bg-sakura-50;
+}
+.btn-outline {
+  @apply btn border-2 border-sakura-200 text-mocha-600 hover:bg-sakura-50;
+}
+
+.input {
+  @apply w-full px-4 py-2.5 rounded-xl bg-cream-50 border border-sakura-100 text-mocha-700 placeholder:text-mocha-500/50 focus:outline-none focus:ring-2 focus:ring-sakura-200 focus:border-transparent transition;
+}
+
+.tag {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+}
