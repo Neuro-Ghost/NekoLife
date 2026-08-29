@@ -9,31 +9,17 @@ import { prisma } from './db';
 
 const providers: any[] = [];
 
+// NextAuth v5 automatically picks up process.env.AUTH_DISCORD_ID & AUTH_DISCORD_SECRET
 if (process.env.AUTH_DISCORD_ID && process.env.AUTH_DISCORD_SECRET) {
-  providers.push(
-    Discord({
-      clientId: process.env.AUTH_DISCORD_ID,
-      clientSecret: process.env.AUTH_DISCORD_SECRET,
-    })
-  );
+  providers.push(Discord);
 }
 
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
-  providers.push(
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-    })
-  );
+  providers.push(Google);
 }
 
 if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
-  providers.push(
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
-    })
-  );
+  providers.push(GitHub);
 }
 
 const emailHost = process.env.EMAIL_SERVER_HOST;
@@ -55,7 +41,7 @@ if (isEmailConfigured) {
   );
 }
 
-// Enable Demo mode whenever no other provider environment variables are present
+// Fallback to Credentials if no OAuth/Email providers are present
 export const isDevDemo = providers.length === 0;
 
 if (isDevDemo) {
@@ -86,7 +72,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   trustHost: true,
   secret: process.env.AUTH_SECRET,
-  // Always use 'jwt' if in Demo/Credentials mode to ensure login works without database sessions
   session: { strategy: isDevDemo ? 'jwt' : 'database' },
   pages: {
     signIn: '/login',
