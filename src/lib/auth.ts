@@ -55,7 +55,8 @@ if (isEmailConfigured) {
   );
 }
 
-export const isDevDemo = process.env.NODE_ENV === 'development' && providers.length === 0;
+// Enable Demo mode whenever no other provider environment variables are present
+export const isDevDemo = providers.length === 0;
 
 if (isDevDemo) {
   providers.push(
@@ -85,6 +86,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   trustHost: true,
   secret: process.env.AUTH_SECRET,
+  // Always use 'jwt' if in Demo/Credentials mode to ensure login works without database sessions
   session: { strategy: isDevDemo ? 'jwt' : 'database' },
   pages: {
     signIn: '/login',
