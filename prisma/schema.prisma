@@ -26,13 +26,16 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
+  @@map("Account")
 }
 
 model Session {
-  sessionToken    String   @unique
-  userId          String
-  expires         DateTime
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("Session")
 }
 
 model VerificationToken {
@@ -41,6 +44,7 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+  @@map("VerificationToken")
 }
 
 model User {
@@ -60,23 +64,25 @@ model User {
   notes     Note[]
   habits    Habit[]
   habitLogs HabitLog[]
+
+  @@map("User")
 }
 
 // -------- Domain --------
 
 model Task {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   description String?
-  done        Boolean  @default(false)
-  priority    String   @default("normal") // low | normal | high | urgent
-  area        String   @default("PERSONAL")
-  status      String   @default("todo")    // todo | doing | done | later
+  done        Boolean   @default(false)
+  priority    String    @default("normal") // low | normal | high | urgent
+  area        String    @default("PERSONAL")
+  status      String    @default("todo")    // todo | doing | done | later
   dueDate     DateTime?
-  tags        String   @default("")       // comma-separated
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tags        String    @default("")        // comma-separated
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
