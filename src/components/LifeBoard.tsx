@@ -8,13 +8,31 @@ import { format, subDays } from 'date-fns';
 
 export function LifeBoard({ habits }: { habits: any[] }) {
   const [show, setShow] = useState(false);
+  const [emoji, setEmoji] = useState('✨');
+  const [name, setName] = useState('');
+
   const last7 = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'yyyy-MM-dd'));
   const labels = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'EEE'));
+
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    const formData = new FormData(e.currentTarget);
+    await createHabit(formData);
+    
+    // Reset state & close modal
+    setName('');
+    setEmoji('✨');
+    setShow(false);
+  };
 
   return (
     <div>
       <div className="flex gap-2 mb-4">
-        <button onClick={() => setShow(true)} className="btn-primary"><Plus className="w-4 h-4" /> New habit</button>
+        <button onClick={() => setShow(true)} className="btn-primary">
+          <Plus className="w-4 h-4" /> New habit
+        </button>
       </div>
 
       <div className="card p-5">
@@ -36,7 +54,9 @@ export function LifeBoard({ habits }: { habits: any[] }) {
                   <span className="text-2xl">{h.emoji}</span>
                   <div className="min-w-0">
                     <div className="font-bold text-mocha-700 truncate">{h.name}</div>
-                    <span className="tag text-[10px]" style={{ background: meta.color + '55', color: '#4A3828' }}>{meta.emoji} {meta.label}</span>
+                    <span className="tag text-[10px]" style={{ background: meta.color + '55', color: '#4A3828' }}>
+                      {meta.emoji} {meta.label}
+                    </span>
                   </div>
                 </div>
                 {last7.map((d) => (
@@ -45,7 +65,9 @@ export function LifeBoard({ habits }: { habits: any[] }) {
                     onClick={() => toggleHabitLog(h.id, d)}
                     className={cn(
                       'hidden md:flex h-10 rounded-lg items-center justify-center transition border',
-                      logSet.has(d) ? 'bg-gradient-to-br from-sakura-200 to-lavender-200 border-sakura-300' : 'border-mocha-500/10 hover:border-sakura-300'
+                      logSet.has(d)
+                        ? 'bg-gradient-to-br from-sakura-200 to-lavender-200 border-sakura-300'
+                        : 'border-mocha-500/10 hover:border-sakura-300'
                     )}
                     title={d}
                   >
@@ -73,26 +95,65 @@ export function LifeBoard({ habits }: { habits: any[] }) {
       </div>
 
       {show && (
-        <div className="fixed inset-0 bg-mocha-700/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShow(false)}>
+        <div
+          className="fixed inset-0 bg-mocha-700/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShow(false)}
+        >
           <form
-            onSubmit={async (e) => { e.preventDefault(); await createHabit(new FormData(e.currentTarget)); setShow(false); }}
-            className="card p-6 w-full max-w-md space-y-3"
+            onSubmit={handleCreate}
+            className="card p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-mocha-700 text-lg">New habit 🌱</h3>
-              <button type="button" onClick={() => setShow(false)}><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setShow(false)}>
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="flex gap-2">
-              <input name="emoji" defaultValue="✨" className="input w-20 text-center text-2xl" maxLength={3} />
-              <input name="name" required placeholder="e.g. Drink water" className="input flex-1" autoFocus />
+
+            <div className="flex gap-3 items-center">
+              <div>
+                <label className="block text-xs font-semibold text-mocha-500 mb-1">Emoji</label>
+                <input
+                  name="emoji"
+                  value={emoji}
+                  onChange={(e) => setEmoji(e.target.value)}
+                  className="input w-16 text-center text-2xl"
+                  maxLength={4}
+                />
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-mocha-500 mb-1">Habit Name</label>
+                <input
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="e.g. Drink water"
+                  className="input w-full"
+                />
+              </div>
             </div>
-            <select name="area" defaultValue="HEALTH" className="input">
-              {Object.entries(AREA_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
-            </select>
+
+            <div>
+              <label className="block text-xs font-semibold text-mocha-500 mb-1">Area</label>
+              <select name="area" defaultValue="HEALTH" className="input w-full">
+                {Object.entries(AREA_META).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.emoji} {v.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setShow(false)} className="btn-ghost">Cancel</button>
-              <button className="btn-primary">Create</button>
+              <button type="button" onClick={() => setShow(false)} className="btn-ghost">
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary">
+                Create
+              </button>
             </div>
           </form>
         </div>
@@ -108,8 +169,10 @@ function computeStreak(dates: string[]): number {
   let d = new Date();
   while (true) {
     const key = format(d, 'yyyy-MM-dd');
-    if (set.has(key)) { streak++; d = subDays(d, 1); }
-    else break;
+    if (set.has(key)) {
+      streak++;
+      d = subDays(d, 1);
+    } else break;
   }
   return streak;
 }
