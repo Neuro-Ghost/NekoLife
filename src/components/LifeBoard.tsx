@@ -6,6 +6,8 @@ import { AREA_META, cn } from '@/lib/utils';
 import { Plus, Trash2, Flame, X } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
+const COMMON_EMOJIS = ['✨', '💧', '🏃', '📚', '🧘', '🥗', '🏋️', '😴', '💊', '🎸', '💻', '🎨', '🌱', '☀️', '☕'];
+
 export function LifeBoard({ habits }: { habits: any[] }) {
   const [show, setShow] = useState(false);
   const [emoji, setEmoji] = useState('✨');
@@ -113,13 +115,18 @@ export function LifeBoard({ habits }: { habits: any[] }) {
             <div className="flex gap-3 items-end">
               <div>
                 <label className="block text-xs font-semibold text-mocha-500 mb-1">Emoji</label>
-                <input
+                <select
                   name="emoji"
                   value={emoji}
                   onChange={(e) => setEmoji(e.target.value)}
-                  className="input w-16 text-center text-base py-1.5 h-10 min-h-0"
-                  maxLength={4}
-                />
+                  className="input w-16 text-center text-lg h-10 py-1 px-1 cursor-pointer"
+                >
+                  {COMMON_EMOJIS.map((e) => (
+                    <option key={e} value={e}>
+                      {e}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex-1">
