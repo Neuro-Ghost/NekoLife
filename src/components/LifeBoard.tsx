@@ -21,7 +21,6 @@ export function LifeBoard({ habits }: { habits: any[] }) {
     const formData = new FormData(e.currentTarget);
     await createHabit(formData);
     
-    // Reset state & close modal
     setName('');
     setEmoji('✨');
     setShow(false);
@@ -111,14 +110,14 @@ export function LifeBoard({ habits }: { habits: any[] }) {
               </button>
             </div>
 
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-3 items-end">
               <div>
                 <label className="block text-xs font-semibold text-mocha-500 mb-1">Emoji</label>
                 <input
                   name="emoji"
                   value={emoji}
                   onChange={(e) => setEmoji(e.target.value)}
-                  className="input w-16 text-center text-2xl"
+                  className="input w-16 text-center text-base py-1.5 h-10 min-h-0"
                   maxLength={4}
                 />
               </div>
@@ -131,7 +130,7 @@ export function LifeBoard({ habits }: { habits: any[] }) {
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="e.g. Drink water"
-                  className="input w-full"
+                  className="input w-full h-10 py-1.5"
                 />
               </div>
             </div>
