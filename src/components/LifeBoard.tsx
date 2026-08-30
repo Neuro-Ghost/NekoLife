@@ -22,7 +22,7 @@ export function LifeBoard({ habits }: { habits: any[] }) {
 
     const formData = new FormData(e.currentTarget);
     await createHabit(formData);
-    
+
     setName('');
     setEmoji('✨');
     setShow(false);
@@ -37,22 +37,32 @@ export function LifeBoard({ habits }: { habits: any[] }) {
       </div>
 
       <div className="card p-5">
-        <div className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_repeat(7,1fr)_auto] items-center gap-2">
-          <div className="text-xs font-bold text-mocha-500 uppercase tracking-wide">Habit</div>
-          {labels.map((l, i) => (
-            <div key={i} className="text-xs font-bold text-mocha-500 text-center hidden md:block">{l}</div>
-          ))}
-          <div className="text-xs font-bold text-mocha-500 text-center">Streak</div>
-          <div></div>
+        {/* Table Header */}
+        <div className="flex items-center gap-3 pb-3 mb-2 border-b border-mocha-500/10">
+          <div className="w-56 text-xs font-bold text-mocha-500 uppercase tracking-wide">Habit</div>
+          <div className="flex-1 hidden md:flex gap-2">
+            {labels.map((l, i) => (
+              <div key={i} className="flex-1 text-xs font-bold text-mocha-500 text-center">
+                {l}
+              </div>
+            ))}
+          </div>
+          <div className="w-16 text-xs font-bold text-mocha-500 text-center">Streak</div>
+          <div className="w-8"></div>
+        </div>
 
+        {/* Habit Rows */}
+        <div className="space-y-3">
           {habits.map((h) => {
             const logSet = new Set(h.logs.map((l: any) => l.date));
             const streak = computeStreak(h.logs.map((l: any) => l.date));
             const meta = AREA_META[h.area] || AREA_META.HEALTH;
+
             return (
-              <div key={h.id} className="contents">
-                <div className="flex items-center gap-2 py-2">
-                  <span className="text-2xl">{h.emoji}</span>
+              <div key={h.id} className="flex items-center gap-3 py-1">
+                {/* Habit Details */}
+                <div className="w-56 flex items-center gap-2.5 min-w-0">
+                  <span className="text-2xl shrink-0">{h.emoji}</span>
                   <div className="min-w-0">
                     <div className="font-bold text-mocha-700 truncate">{h.name}</div>
                     <span className="tag text-[10px]" style={{ background: meta.color + '55', color: '#4A3828' }}>
@@ -60,26 +70,34 @@ export function LifeBoard({ habits }: { habits: any[] }) {
                     </span>
                   </div>
                 </div>
-                {last7.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => toggleHabitLog(h.id, d)}
-                    className={cn(
-                      'hidden md:flex h-10 rounded-lg items-center justify-center transition border',
-                      logSet.has(d)
-                        ? 'bg-gradient-to-br from-sakura-200 to-lavender-200 border-sakura-300'
-                        : 'border-mocha-500/10 hover:border-sakura-300'
-                    )}
-                    title={d}
-                  >
-                    {logSet.has(d) ? '✓' : ''}
-                  </button>
-                ))}
-                <div className="flex items-center gap-1 justify-center font-bold text-mocha-700">
+
+                {/* Last 7 Days Checkboxes */}
+                <div className="flex-1 hidden md:flex gap-2">
+                  {last7.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => toggleHabitLog(h.id, d)}
+                      className={cn(
+                        'flex-1 h-10 rounded-lg flex items-center justify-center transition border',
+                        logSet.has(d)
+                          ? 'bg-gradient-to-br from-sakura-200 to-lavender-200 border-sakura-300 font-bold text-mocha-700'
+                          : 'border-mocha-500/10 hover:border-sakura-300'
+                      )}
+                      title={d}
+                    >
+                      {logSet.has(d) ? '✓' : ''}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Streak Badge */}
+                <div className="w-16 flex items-center justify-center gap-1 font-bold text-mocha-700">
                   <Flame className={cn('w-4 h-4', streak > 0 ? 'text-sakura-400' : 'text-mocha-500/50')} />
                   {streak}
                 </div>
-                <button onClick={() => deleteHabit(h.id)} className="text-mocha-500/60 hover:text-sakura-400 p-1">
+
+                {/* Delete Button */}
+                <button onClick={() => deleteHabit(h.id)} className="w-8 flex justify-center text-mocha-500/60 hover:text-sakura-400 p-1">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -95,6 +113,7 @@ export function LifeBoard({ habits }: { habits: any[] }) {
         )}
       </div>
 
+      {/* New Habit Modal */}
       {show && (
         <div
           className="fixed inset-0 bg-mocha-700/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
