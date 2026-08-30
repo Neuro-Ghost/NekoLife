@@ -7,29 +7,41 @@ import Nodemailer from 'next-auth/providers/nodemailer';
 import Credentials from 'next-auth/providers/credentials';
 import { prisma } from './db';
 
-const providers: any[] = [];
+// Safely collect valid providers
+const activeProviders: any[] = [];
 
-// NextAuth v5 automatically picks up process.env.AUTH_DISCORD_ID & AUTH_DISCORD_SECRET
 if (process.env.AUTH_DISCORD_ID && process.env.AUTH_DISCORD_SECRET) {
-  providers.push(Discord);
+  activeProviders.push(
+    Discord({
+      clientId: process.env.AUTH_DISCORD_ID,
+      clientSecret: process.env.AUTH_DISCORD_SECRET,
+    })
+  );
 }
 
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
-  providers.push(Google);
+  activeProviders.push(
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    })
+  );
 }
 
 if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
-  providers.push(GitHub);
+  activeProviders.push(
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_ID,
+      clientSecret: process.env.AUTH_GITHUB_SECRET,
+    })
+  );
 }
 
-const emailHost = process.env.EMAIL_SERVER_HOST;
-export const isEmailConfigured = !!emailHost && emailHost !== 'smtp.example.com';
-
-if (isEmailConfigured) {
-  providers.push(
+if (process.env.EMAIL_SERVER_HOST && process.env.EMAIL_SERVER_HOST !== 'smtp.example.com') {
+  activeProviders.push(
     Nodemailer({
       server: {
-        host: emailHost,
+        host: process.env.EMAIL_SERVER_HOST,
         port: Number(process.env.EMAIL_SERVER_PORT || 587),
         auth: {
           user: process.env.EMAIL_SERVER_USER,
@@ -41,11 +53,9 @@ if (isEmailConfigured) {
   );
 }
 
-// Fallback to Credentials if no OAuth/Email providers are present
-export const isDevDemo = providers.length === 0;
-
-if (isDevDemo) {
-  providers.push(
+// Guarantee at least one provider exists so NextAuth initialization never fails
+if (activeProviders.length === 0) {
+  activeProviders.push(
     Credentials({
       id: 'demo',
       name: 'Dev Demo',
@@ -65,28 +75,26 @@ if (isDevDemo) {
   );
 }
 
-export const hasOAuth = providers.some((p: any) => p && p.id !== 'demo' && p.id !== 'nodemailer');
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: isDevDemo ? undefined : PrismaAdapter(prisma),
-  providers,
+  adapter: PrismaAdapter(prisma),
+  providers: activeProviders,
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
-  session: { strategy: isDevDemo ? 'jwt' : 'database' },
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',
-    verifyRequest: '/login?verify=1',
+    error: '/login',
   },
   callbacks: {
-    session({ session, user, token }) {
-      if (session.user) {
-        (session.user as any).id = (user as any)?.id ?? (token as any)?.sub;
-      }
-      return session;
-    },
     async jwt({ token, user }) {
       if (user) token.sub = user.id;
       return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
     },
   },
 });
