@@ -14,7 +14,7 @@ export function LifeBoard({ habits }: { habits: any[] }) {
   const [name, setName] = useState('');
   const [, startTransition] = useTransition();
 
-  // Optimistic state handling for toggling AND creating habits
+  // Unified Optimistic State (Toggle, Create, Delete)
   const [optimisticHabits, setOptimisticHabits] = useOptimistic(
     habits,
     (state, action: { type: 'TOGGLE' | 'CREATE' | 'DELETE'; payload: any }) => {
@@ -54,21 +54,22 @@ export function LifeBoard({ habits }: { habits: any[] }) {
   const last7 = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'yyyy-MM-dd'));
   const labels = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'EEE'));
 
+  // Handlers with Server Actions nested inside startTransition
   const handleToggle = (habitId: string, date: string) => {
-    startTransition(() => {
+    startTransition(async () => {
       setOptimisticHabits({ type: 'TOGGLE', payload: { habitId, date } });
+      await toggleHabitLog(habitId, date);
     });
-    toggleHabitLog(habitId, date);
   };
 
   const handleDelete = (habitId: string) => {
-    startTransition(() => {
+    startTransition(async () => {
       setOptimisticHabits({ type: 'DELETE', payload: { habitId } });
+      await deleteHabit(habitId);
     });
-    deleteHabit(habitId);
   };
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -77,21 +78,17 @@ export function LifeBoard({ habits }: { habits: any[] }) {
     const newHabitName = name;
     const newHabitEmoji = emoji;
 
-    // 1. Instantly close modal & reset input fields
     setShow(false);
     setName('');
     setEmoji('✨');
 
-    // 2. Instantly append new habit to board optimistically
-    startTransition(() => {
+    startTransition(async () => {
       setOptimisticHabits({
         type: 'CREATE',
         payload: { name: newHabitName, emoji: newHabitEmoji, area },
       });
+      await createHabit(formData);
     });
-
-    // 3. Persist to Supabase database in background
-    await createHabit(formData);
   };
 
   return (
