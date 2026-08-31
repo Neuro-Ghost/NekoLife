@@ -57,13 +57,14 @@ model User {
   theme         String    @default("sakura")
   createdAt     DateTime  @default(now())
 
-  accounts  Account[]
-  sessions  Session[]
-  tasks     Task[]
-  events    Event[]
-  notes     Note[]
-  habits    Habit[]
-  habitLogs HabitLog[]
+  accounts    Account[]
+  sessions    Session[]
+  tasks       Task[]
+  events      Event[]
+  notes       Note[]
+  habits      Habit[]
+  habitLogs   HabitLog[]
+  reflections Reflection[]
 
   @@map("User")
 }
@@ -131,7 +132,7 @@ model Habit {
   createdAt DateTime @default(now())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs   HabitLog[]
 }
 
