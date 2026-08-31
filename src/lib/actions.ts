@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { format } from 'date-fns';
+
+const STICKERS = ['🌸', '✨', '🐾', '🍵', '🌿', '🎨', '🌙'];
 
 /**
  * Retrieves the current authenticated user ID.
@@ -225,6 +228,57 @@ export async function toggleHabitLog(habitId: string, date: string) {
   }
 
   revalidatePath('/dashboard/life');
+}
+
+// ==========================================
+// REFLECTION ACTIONS
+// ==========================================
+
+export async function saveReflection(content: string) {
+  const userId = await requireUserId();
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const randomSticker = STICKERS[Math.floor(Math.random() * STICKERS.length)];
+
+  const existing = await prisma.reflection.findFirst({
+    where: { userId, date: today },
+  });
+
+  if (existing) {
+    await prisma.reflection.update({
+      where: { id: existing.id },
+      data: { content },
+    });
+  } else {
+    await prisma.reflection.create({
+      data: {
+        userId,
+        date: today,
+        content,
+        sticker: randomSticker,
+      },
+    });
+  }
+
+  revalidatePath('/dashboard/life');
+}
+
+export async function getReflectionData() {
+  const userId = await requireUserId();
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  const entries = await prisma.reflection.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const todayEntry = entries.find((e) => e.date === today);
+  const stickers = entries.map((e) => e.sticker);
+
+  return {
+    todayReflection: todayEntry?.content || '',
+    totalCount: entries.length,
+    stickers,
+  };
 }
 
 // ==========================================
