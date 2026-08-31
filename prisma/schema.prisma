@@ -145,3 +145,15 @@ model HabitLog {
 
   @@unique([habitId, date])
 }
+
+model Reflection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // format: YYYY-MM-DD
+  content   String
+  sticker   String   @default("🌸")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
