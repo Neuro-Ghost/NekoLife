@@ -14,18 +14,40 @@ export function LifeBoard({ habits }: { habits: any[] }) {
   const [name, setName] = useState('');
   const [, startTransition] = useTransition();
 
-  // Optimistic state for instant UI updates on toggle
+  // Optimistic state handling for toggling AND creating habits
   const [optimisticHabits, setOptimisticHabits] = useOptimistic(
     habits,
-    (state, { habitId, date }: { habitId: string; date: string }) => {
-      return state.map((h) => {
-        if (h.id !== habitId) return h;
-        const hasLog = h.logs.some((l: any) => l.date === date);
-        const newLogs = hasLog
-          ? h.logs.filter((l: any) => l.date !== date)
-          : [...h.logs, { date, habitId }];
-        return { ...h, logs: newLogs };
-      });
+    (state, action: { type: 'TOGGLE' | 'CREATE' | 'DELETE'; payload: any }) => {
+      switch (action.type) {
+        case 'TOGGLE':
+          return state.map((h) => {
+            if (h.id !== action.payload.habitId) return h;
+            const hasLog = h.logs.some((l: any) => l.date === action.payload.date);
+            const newLogs = hasLog
+              ? h.logs.filter((l: any) => l.date !== action.payload.date)
+              : [...h.logs, { date: action.payload.date, habitId: action.payload.habitId }];
+            return { ...h, logs: newLogs };
+          });
+
+        case 'CREATE':
+          return [
+            ...state,
+            {
+              id: 'temp-' + Date.now(),
+              name: action.payload.name,
+              emoji: action.payload.emoji,
+              area: action.payload.area,
+              logs: [],
+              createdAt: new Date().toISOString(),
+            },
+          ];
+
+        case 'DELETE':
+          return state.filter((h) => h.id !== action.payload.habitId);
+
+        default:
+          return state;
+      }
     }
   );
 
@@ -33,13 +55,17 @@ export function LifeBoard({ habits }: { habits: any[] }) {
   const labels = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'EEE'));
 
   const handleToggle = (habitId: string, date: string) => {
-    // 1. Immediately toggle in local UI state
     startTransition(() => {
-      setOptimisticHabits({ habitId, date });
+      setOptimisticHabits({ type: 'TOGGLE', payload: { habitId, date } });
     });
-
-    // 2. Persist change to Supabase in background
     toggleHabitLog(habitId, date);
+  };
+
+  const handleDelete = (habitId: string) => {
+    startTransition(() => {
+      setOptimisticHabits({ type: 'DELETE', payload: { habitId } });
+    });
+    deleteHabit(habitId);
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -47,11 +73,25 @@ export function LifeBoard({ habits }: { habits: any[] }) {
     if (!name.trim()) return;
 
     const formData = new FormData(e.currentTarget);
-    await createHabit(formData);
+    const area = (formData.get('area') as string) || 'HEALTH';
+    const newHabitName = name;
+    const newHabitEmoji = emoji;
 
+    // 1. Instantly close modal & reset input fields
+    setShow(false);
     setName('');
     setEmoji('✨');
-    setShow(false);
+
+    // 2. Instantly append new habit to board optimistically
+    startTransition(() => {
+      setOptimisticHabits({
+        type: 'CREATE',
+        payload: { name: newHabitName, emoji: newHabitEmoji, area },
+      });
+    });
+
+    // 3. Persist to Supabase database in background
+    await createHabit(formData);
   };
 
   return (
@@ -123,7 +163,10 @@ export function LifeBoard({ habits }: { habits: any[] }) {
                 </div>
 
                 {/* Delete Button */}
-                <button onClick={() => deleteHabit(h.id)} className="w-8 flex justify-center text-mocha-500/60 hover:text-sakura-400 p-1">
+                <button
+                  onClick={() => handleDelete(h.id)}
+                  className="w-8 flex justify-center text-mocha-500/60 hover:text-sakura-400 p-1"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
