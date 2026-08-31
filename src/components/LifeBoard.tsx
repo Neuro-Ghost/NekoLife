@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useOptimistic, useTransition } from 'react';
 import { createHabit, deleteHabit, toggleHabitLog } from '@/lib/actions';
 import { AREA_META, cn } from '@/lib/utils';
 import { Plus, Trash2, Flame, X } from 'lucide-react';
@@ -12,9 +12,35 @@ export function LifeBoard({ habits }: { habits: any[] }) {
   const [show, setShow] = useState(false);
   const [emoji, setEmoji] = useState('✨');
   const [name, setName] = useState('');
+  const [, startTransition] = useTransition();
+
+  // Optimistic state for instant UI updates on toggle
+  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
+    habits,
+    (state, { habitId, date }: { habitId: string; date: string }) => {
+      return state.map((h) => {
+        if (h.id !== habitId) return h;
+        const hasLog = h.logs.some((l: any) => l.date === date);
+        const newLogs = hasLog
+          ? h.logs.filter((l: any) => l.date !== date)
+          : [...h.logs, { date, habitId }];
+        return { ...h, logs: newLogs };
+      });
+    }
+  );
 
   const last7 = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'yyyy-MM-dd'));
   const labels = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'EEE'));
+
+  const handleToggle = (habitId: string, date: string) => {
+    // 1. Immediately toggle in local UI state
+    startTransition(() => {
+      setOptimisticHabits({ habitId, date });
+    });
+
+    // 2. Persist change to Supabase in background
+    toggleHabitLog(habitId, date);
+  };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,7 +79,7 @@ export function LifeBoard({ habits }: { habits: any[] }) {
 
         {/* Habit Rows */}
         <div className="space-y-3">
-          {habits.map((h) => {
+          {optimisticHabits.map((h) => {
             const logSet = new Set(h.logs.map((l: any) => l.date));
             const streak = computeStreak(h.logs.map((l: any) => l.date));
             const meta = AREA_META[h.area] || AREA_META.HEALTH;
@@ -76,11 +102,11 @@ export function LifeBoard({ habits }: { habits: any[] }) {
                   {last7.map((d) => (
                     <button
                       key={d}
-                      onClick={() => toggleHabitLog(h.id, d)}
+                      onClick={() => handleToggle(h.id, d)}
                       className={cn(
-                        'flex-1 h-10 rounded-lg flex items-center justify-center transition border',
+                        'flex-1 h-10 rounded-lg flex items-center justify-center transition-all duration-150 border active:scale-95',
                         logSet.has(d)
-                          ? 'bg-gradient-to-br from-sakura-200 to-lavender-200 border-sakura-300 font-bold text-mocha-700'
+                          ? 'bg-gradient-to-br from-sakura-200 to-lavender-200 border-sakura-300 font-bold text-mocha-700 shadow-sm'
                           : 'border-mocha-500/10 hover:border-sakura-300'
                       )}
                       title={d}
@@ -105,7 +131,7 @@ export function LifeBoard({ habits }: { habits: any[] }) {
           })}
         </div>
 
-        {habits.length === 0 && (
+        {optimisticHabits.length === 0 && (
           <div className="text-center text-mocha-500 py-8">
             <div className="text-5xl mb-2">🐱</div>
             No habits yet. Start small — one tiny habit is plenty.
